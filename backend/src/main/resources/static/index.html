@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090811">
+  <meta name="description" content="Discover popular movies, explore new stories, and find your next favorite with CineRate.">
+  <title>CineRate — Discover. Watch. Rate.</title>
+  <link rel="preconnect" href="https://image.tmdb.org">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav-shell" aria-label="Main navigation">
+      <a class="brand" href="/" aria-label="CineRate home">
+        <span class="brand-mark" aria-hidden="true">C</span>
+        <span>Cine<span class="brand-accent">Rate</span></span>
+      </a>
+      <div class="nav-links">
+        <a class="nav-link active" href="#home">Home</a>
+        <a class="nav-link" href="#popular">Popular Movies</a>
+      </div>
+      <a class="nav-cta" href="#popular">Explore films <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" id="home" aria-labelledby="hero-title">
+      <div class="hero-glow" aria-hidden="true"></div>
+      <div class="hero-content">
+        <p class="eyebrow"><span class="eyebrow-dot"></span> YOUR MOVIE NIGHT STARTS HERE</p>
+        <h1 id="hero-title">Discover.<br><span>Watch. Rate.</span></h1>
+        <p class="hero-copy">Find stories worth staying in for. Explore what’s popular, uncover your next favorite, and make every movie night count.</p>
+        <a class="primary-button" href="#popular">Explore Movies <span aria-hidden="true">→</span></a>
+        <div class="hero-note"><span aria-hidden="true">✦</span> Powered by real-time movie data</div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="orbit orbit-one"></div>
+        <div class="orbit orbit-two"></div>
+        <div class="film-tile tile-back"></div>
+        <div class="film-tile tile-front"><span>CR</span></div>
+        <div class="hero-spark spark-one"></div>
+        <div class="hero-spark spark-two"></div>
+      </div>
+      <a class="scroll-cue" href="#popular"><span></span> SCROLL TO DISCOVER</a>
+    </section>
+
+    <section class="popular-section" id="popular" aria-labelledby="popular-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow section-eyebrow">THE CROWD HAS SPOKEN</p>
+          <h2 id="popular-title">Popular <span>Movies</span></h2>
+          <p class="section-copy">The films everyone’s watching right now.</p>
+        </div>
+        <div class="section-side-note"><span class="live-indicator"></span> LIVE FROM TMDB</div>
+      </div>
+      <div id="movie-status" class="movie-status" role="status" aria-live="polite">
+        <span class="loading-spinner" aria-hidden="true"></span>
+        <span>Loading popular movies…</span>
+      </div>
+      <div id="movie-grid" class="movie-grid" aria-label="Popular movies"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <a class="brand footer-brand" href="#home" aria-label="CineRate home">
+      <span class="brand-mark" aria-hidden="true">C</span>
+      <span>Cine<span class="brand-accent">Rate</span></span>
+    </a>
+    <p>For the love of a good story.</p>
+    <p class="footer-credit">Movie data provided by <a href="https://www.themoviedb.org/" target="_blank" rel="noreferrer">TMDB</a>. This product is not endorsed or certified by TMDB.</p>
+    <span class="copyright">© <span id="current-year"></span> CineRate</span>
+  </footer>
+</body>
+</html>
