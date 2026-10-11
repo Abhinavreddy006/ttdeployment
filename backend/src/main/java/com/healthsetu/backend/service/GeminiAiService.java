@@ -19,7 +19,7 @@ import java.util.Map;
 @Service
 public class GeminiAiService {
 
-    @Value("${gemini.api.key}")
+    @Value("${gemini.api.key:AQ.Ab8RN6I_Jlt0MHfEwwFQRYoq7WHD3-T8XwT87uzPspCeoMTusA}")
     private String apiKey;
 
     // Updated to use the 3.8 model as required by Google
