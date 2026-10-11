@@ -2,7 +2,8 @@ import axios from 'axios'
 
 export const TOKEN_STORAGE_KEY = 'healthsetu_token'
 
-const rawBaseURL = import.meta.env.VITE_API_BASE_URL || ''
+const savedBackend = typeof window !== 'undefined' ? localStorage.getItem('healthsetu_api_url') : ''
+const rawBaseURL = import.meta.env.VITE_API_BASE_URL || savedBackend || ''
 const baseURL = rawBaseURL.replace(/\/+$/, '')
 
 const api = axios.create({
@@ -41,6 +42,13 @@ api.interceptors.response.use(
 )
 
 function errorMessage(error) {
+  const status = error.response?.status
+  if (status === 405) {
+    return 'Backend service is not reachable or still starting up on Render. Please ensure the backend is deployed and Live on Render.'
+  }
+  if (error.code === 'ERR_NETWORK') {
+    return 'Unable to reach backend service. If the server is on Render Free Tier, please wait ~45s for it to spin up from sleep.'
+  }
   const responseData = error.response?.data
   if (typeof responseData === 'string' && responseData.trim()) return responseData
   if (responseData?.message) return responseData.message
