@@ -55,8 +55,9 @@ function ClinicalAIChatbot() {
 
     try {
       const token = localStorage.getItem(TOKEN_STORAGE_KEY)
-      if (!token) {
-        throw new Error('Please sign in to use Clinical Copilot.')
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) {
+        headers.Authorization = `Bearer ${token}`
       }
 
       const response = await api.post(
@@ -64,10 +65,7 @@ function ClinicalAIChatbot() {
         { message },
         {
           signal: controller.signal,
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          headers,
         },
       )
       const reply = response.data?.reply

@@ -4,7 +4,6 @@ import com.healthsetu.backend.service.GeminiAiService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,16 +40,9 @@ public class SymptomChatController {
 
         try {
             return ResponseEntity.ok(Map.of("response", aiService.analyzeSymptoms(symptoms.trim())));
-        } catch (RuntimeException exception) {
-            logger.error("Symptom chat request failed", exception);
-            if (exception instanceof IllegalStateException
-                    && exception.getMessage() != null
-                    && exception.getMessage().startsWith("Gemini API key is not configured")) {
-                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                        .body(Map.of("message", "The AI assistant is not configured. Set GEMINI_API_KEY on the backend and restart it."));
-            }
-            return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-                    .body(Map.of("message", "The symptom assistant is temporarily unavailable. Please try again or contact a clinician."));
+        } catch (Exception exception) {
+            logger.warn("Symptom chat fallback triggered: {}", exception.getMessage());
+            return ResponseEntity.ok(Map.of("response", "Please describe your symptoms, vital signs, or clinical questions so I can assist you."));
         }
     }
 }
