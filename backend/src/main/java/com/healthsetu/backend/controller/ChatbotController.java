@@ -9,15 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/ai")
-@CrossOrigin(
-    origins = {
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:5174"
-    }, 
-    maxAge = 3600 // Caches the CORS preflight check for 1 hour
-)
+@CrossOrigin(origins = "*", maxAge = 3600)
 public class ChatbotController {
 
     private static final int MAX_MESSAGE_LENGTH = 3000;

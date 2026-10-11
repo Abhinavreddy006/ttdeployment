@@ -2,8 +2,11 @@ import axios from 'axios'
 
 export const TOKEN_STORAGE_KEY = 'healthsetu_token'
 
+const rawBaseURL = import.meta.env.VITE_API_BASE_URL || ''
+const baseURL = rawBaseURL.replace(/\/+$/, '')
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '',
+  baseURL,
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -46,9 +49,10 @@ function errorMessage(error) {
 
 export async function apiRequest(path, options = {}) {
   try {
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`
     const response = await api.request({
       ...options,
-      url: path,
+      url: normalizedPath,
       data: options.body
         ? typeof options.body === 'string'
           ? JSON.parse(options.body)
