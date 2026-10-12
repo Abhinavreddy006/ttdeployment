@@ -1,39 +1,53 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Bookmark, Check, ChevronLeft, ChevronRight, Play, Search, Sparkles, Star } from 'lucide-react';
-import { getImageUrl, recommendationService, tmdbService, watchlistService } from '../services/api';
+import {
+  ArrowRight,
+  Bookmark,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Film,
+  Play,
+  Search,
+  Sparkles,
+  Star,
+  PlusCircle
+} from 'lucide-react';
+import {
+  getImageUrl,
+  movieService,
+  recommendationService,
+  tmdbService,
+  watchlistService
+} from '../services/api';
 import ErrorAlert from '../components/ErrorAlert';
 import MovieCard from '../components/MovieCard';
 import RatingStars from '../components/RatingStars';
 
 const DISCOVERY_ROWS = [
-  { key: 'trending', title: 'Trending', description: 'The movies everyone is talking about', load: () => tmdbService.getTrending('week') },
-  { key: 'popular', title: 'Popular', description: 'Popular picks from movie fans', load: () => tmdbService.getPopular() },
-  { key: 'topRated', title: 'Top Rated', description: 'Highest-rated movies on TMDB', load: () => tmdbService.getTopRated() },
-  { key: 'upcoming', title: 'Coming Soon', description: 'Upcoming movies to look forward to', load: () => tmdbService.getUpcoming() },
-  { key: 'nowPlaying', title: 'Now Playing', description: 'New movies currently in theaters', load: () => tmdbService.getNowPlaying() },
-  { key: 'action', title: 'Action', genre: 28 },
-  { key: 'comedy', title: 'Comedy', genre: 35 },
-  { key: 'sciFi', title: 'Sci-Fi', genre: 878 },
-  { key: 'drama', title: 'Drama', genre: 18 },
-  { key: 'romance', title: 'Romance', genre: 10749 },
-  { key: 'thriller', title: 'Thriller', genre: 53 },
-  { key: 'kids', title: 'Kids', genre: '16,10751' },
-  { key: 'family', title: 'Family', genre: 10751 },
-  { key: 'documentary', title: 'Documentary', genre: 99 }
+  { key: 'trending', title: 'Trending This Week', description: 'The movies cinephiles and audiences are currently celebrating', load: () => tmdbService.getTrending('week') },
+  { key: 'popular', title: 'Popular Releases', description: 'Widely watched across global audiences', load: () => tmdbService.getPopular() },
+  { key: 'topRated', title: 'Top Rated Masterpieces', description: 'The all-time greatest cinematic achievements', load: () => tmdbService.getTopRated() },
+  { key: 'nowPlaying', title: 'Now Playing in Theaters', description: 'Fresh cinematic releases currently on the silver screen', load: () => tmdbService.getNowPlaying() },
+  { key: 'upcoming', title: 'Coming Soon', description: 'Upcoming anticipated stories to add to your calendar', load: () => tmdbService.getUpcoming() },
+  { key: 'action', title: 'Action & Adventure', description: 'High-octane thrills, stunts, and daring journeys', genre: 28 },
+  { key: 'sciFi', title: 'Sci-Fi & Speculative', description: 'Far horizons, visionary science, and cosmic sagas', genre: 878 },
+  { key: 'drama', title: 'Compelling Drama', description: 'Profound character journeys, tension, and emotional depth', genre: 18 },
+  { key: 'comedy', title: 'Witty Comedy', description: 'Clever laughs, escapist fun, and feel-good stories', genre: 35 },
+  { key: 'thriller', title: 'Edge-of-Your-Seat Thrillers', description: 'Unrelenting suspense and mind-bending mysteries', genre: 53 },
+  { key: 'romance', title: 'Romance & Passion', description: 'Timeless love stories and modern intimacies', genre: 10749 }
 ];
 
 const GENRE_FILTERS = [
   { key: 'trending', label: 'Trending' },
+  { key: 'topRated', label: 'Top Rated' },
+  { key: 'nowPlaying', label: 'In Theaters' },
   { key: 'action', label: 'Action' },
-  { key: 'comedy', label: 'Comedy' },
   { key: 'sciFi', label: 'Sci-Fi' },
   { key: 'drama', label: 'Drama' },
-  { key: 'romance', label: 'Romance' },
+  { key: 'comedy', label: 'Comedy' },
   { key: 'thriller', label: 'Thriller' },
-  { key: 'kids', label: 'Kids' },
-  { key: 'family', label: 'Family' },
-  { key: 'documentary', label: 'Documentary' }
+  { key: 'romance', label: 'Romance' }
 ];
 
 const MovieShelfSkeleton = () => (
@@ -48,7 +62,16 @@ const MovieShelfSkeleton = () => (
   </div>
 );
 
-const MovieCarousel = ({ title, description, movies, error, onRetry, loading = false, linkTo = '/explore', sectionId }) => {
+const MovieCarousel = ({
+  title,
+  description,
+  movies,
+  error,
+  onRetry,
+  loading = false,
+  linkTo = '/explore',
+  sectionId
+}) => {
   const trackRef = useRef(null);
   const [activePage, setActivePage] = useState(0);
   const [pageCount, setPageCount] = useState(1);
@@ -71,7 +94,7 @@ const MovieCarousel = ({ title, description, movies, error, onRetry, loading = f
       track.removeEventListener('scroll', updatePagination);
       resizeObserver.disconnect();
     };
-  }, [movies.length]);
+  }, [movies?.length]);
 
   const scroll = (direction) => {
     if (trackRef.current) {
@@ -99,13 +122,25 @@ const MovieCarousel = ({ title, description, movies, error, onRetry, loading = f
           {description && <p>{description}</p>}
         </div>
         <div className="home-section-actions">
-          <Link to={linkTo} className="home-view-all">
-            View all <ArrowRight size={15} />
-          </Link>
-          <button type="button" onClick={() => scroll(-1)} aria-label={`Scroll ${title} left`} disabled={movies.length < 2 || loading || Boolean(error)}>
+          {linkTo && (
+            <Link to={linkTo} className="home-view-all">
+              View all <ArrowRight size={15} />
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={() => scroll(-1)}
+            aria-label={`Scroll ${title} left`}
+            disabled={!movies || movies.length < 2 || loading || Boolean(error)}
+          >
             <ChevronLeft size={18} />
           </button>
-          <button type="button" onClick={() => scroll(1)} aria-label={`Scroll ${title} right`} disabled={movies.length < 2 || loading || Boolean(error)}>
+          <button
+            type="button"
+            onClick={() => scroll(1)}
+            aria-label={`Scroll ${title} right`}
+            disabled={!movies || movies.length < 2 || loading || Boolean(error)}
+          >
             <ChevronRight size={18} />
           </button>
         </div>
@@ -114,10 +149,12 @@ const MovieCarousel = ({ title, description, movies, error, onRetry, loading = f
         <MovieShelfSkeleton />
       ) : error ? (
         <ErrorAlert message={error} onRetry={onRetry} />
-      ) : movies.length > 0 ? (
+      ) : movies && movies.length > 0 ? (
         <>
           <div className="movie-shelf-track" ref={trackRef}>
-            {movies.map(movie => <MovieCard key={movie.id} movie={movie} />)}
+            {movies.map(movie => (
+              <MovieCard key={movie.id || movie.tmdbId} movie={movie} />
+            ))}
           </div>
           {pageCount > 1 && (
             <div className="shelf-pagination" aria-label={`${title} carousel pages`}>
@@ -135,7 +172,7 @@ const MovieCarousel = ({ title, description, movies, error, onRetry, loading = f
           )}
         </>
       ) : (
-        <p className="home-empty-message">No movies are available in this row right now.</p>
+        <p className="home-empty-message">No titles are available in this row currently.</p>
       )}
     </section>
   );
@@ -145,59 +182,108 @@ const HomePage = () => {
   const navigate = useNavigate();
   const [moviesByRow, setMoviesByRow] = useState({});
   const [rowErrors, setRowErrors] = useState({});
-  const [recommendations, setRecommendations] = useState([]);
-  const [recommendationError, setRecommendationError] = useState(null);
-  const [recommendationLoading, setRecommendationLoading] = useState(true);
   const [heroMovie, setHeroMovie] = useState(null);
   const [heroIndex, setHeroIndex] = useState(0);
-  const [searchTerm, setSearchTerm] = useState('');
   const [pageLoading, setPageLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [recommendations, setRecommendations] = useState([]);
+  const [recommendationLoading, setRecommendationLoading] = useState(false);
+  const [recommendationError, setRecommendationError] = useState(null);
+
   const [inWatchlist, setInWatchlist] = useState(false);
   const [watchlistReady, setWatchlistReady] = useState(false);
   const [watchlistBusy, setWatchlistBusy] = useState(false);
   const [actionError, setActionError] = useState(null);
 
   const checkHeroWatchlist = async (movie) => {
+    if (!movie?.id) {
+      setInWatchlist(false);
+      setWatchlistReady(false);
+      return;
+    }
     setWatchlistReady(false);
-    setActionError(null);
     try {
-      setInWatchlist(await watchlistService.checkWatchlist(movie.id));
+      const exists = await watchlistService.checkWatchlist(movie.id);
+      setInWatchlist(exists);
       setWatchlistReady(true);
-    } catch (error) {
-      setActionError(error.message);
+    } catch {
+      setInWatchlist(false);
+      setWatchlistReady(false);
     }
   };
 
   const loadHome = async () => {
     setPageLoading(true);
-    const requests = DISCOVERY_ROWS.map(async row => {
-      if (row.genre) {
-        return tmdbService.discover({ withGenres: String(row.genre), sortBy: 'popularity.desc' });
+
+    // Fetch local database movies from Spring Boot
+    let collectionMovies = [];
+    try {
+      const localData = await movieService.getAllMovies();
+      collectionMovies = localData.map(m => ({
+        ...m,
+        isLocalCatalog: true,
+        id: m.tmdbId || m.id,
+        tmdbId: m.tmdbId || m.id,
+        poster_path: m.poster_path || m.posterPath || m.posterUrl,
+        backdrop_path: m.backdrop_path || m.backdropPath || m.backdropUrl,
+        vote_average: m.vote_average ?? m.voteAverage ?? m.averageRating,
+        vote_count: m.vote_count ?? m.voteCount ?? m.totalReviews,
+        release_date: m.release_date || (m.releaseYear ? `${m.releaseYear}-01-01` : ''),
+        overview: m.overview || m.description
+      }));
+    } catch {
+      // Local collection request failed or empty
+    }
+
+    // Load TMDB shelves
+    const rowPromises = DISCOVERY_ROWS.map(async row => {
+      try {
+        const data = row.genre
+          ? await tmdbService.discover({ withGenres: String(row.genre), sortBy: 'popularity.desc' })
+          : await row.load();
+        return { key: row.key, movies: data?.results || [], error: null };
+      } catch (err) {
+        return { key: row.key, movies: [], error: err.message };
       }
-      return row.load();
-    });
-    const results = await Promise.allSettled(requests);
-    const nextMovies = {};
-    const nextErrors = {};
-
-    results.forEach((result, index) => {
-      const row = DISCOVERY_ROWS[index];
-      if (result.status === 'fulfilled') {
-        nextMovies[row.key] = result.value.results || [];
-      } else {
-        nextErrors[row.key] = result.reason.message;
-      }
     });
 
-    setMoviesByRow(nextMovies);
-    setRowErrors(nextErrors);
-    const nextHero = nextMovies.trending?.[0] ||
-      nextMovies.popular?.[0] ||
-      nextMovies.topRated?.[0] ||
-      nextMovies.nowPlaying?.[0] ||
-      nextMovies.upcoming?.[0];
+    const results = await Promise.all(rowPromises);
+    const newMoviesByRow = { collection: collectionMovies };
+    const newRowErrors = {};
 
-    setHeroMovie(nextHero || null);
+    results.forEach(({ key, movies, error }) => {
+      newMoviesByRow[key] = movies;
+      if (error) newRowErrors[key] = error;
+    });
+
+    setMoviesByRow(newMoviesByRow);
+    setRowErrors(newRowErrors);
+
+    // Featured spotlight hero: Spider-Man: Brand New Day
+    const spidermanMatch = collectionMovies.find(m => {
+      const norm = (m.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      return norm.includes('spiderman') && norm.includes('brandnewday');
+    });
+
+    const SPIDERMAN_DEFAULT = {
+      id: 28,
+      tmdbId: 12445,
+      title: 'Spider-Man: Brand New Day',
+      overview: "Fighting crime full-time as Spider-Man in a world that doesn't remember him—and the pressure of seeing his old friends move on without him—sparks a change in Peter Parker he may not have the power to control. But that transformation...",
+      release_date: '2026-01-01',
+      releaseYear: 2026,
+      vote_average: 8.4,
+      vote_count: 4709,
+      averageRating: 8.4,
+      totalReviews: 4709,
+      posterUrl: 'https://image.tmdb.org/t/p/w500/iuFNMS8U5cb6xfzi51Dbkovj7vM.jpg',
+      poster_path: 'https://image.tmdb.org/t/p/w500/iuFNMS8U5cb6xfzi51Dbkovj7vM.jpg',
+      backdropUrl: 'https://image.tmdb.org/t/p/w500/iuFNMS8U5cb6xfzi51Dbkovj7vM.jpg',
+      backdrop_path: 'https://image.tmdb.org/t/p/w500/iuFNMS8U5cb6xfzi51Dbkovj7vM.jpg'
+    };
+
+    const nextHero = spidermanMatch || collectionMovies[0] || SPIDERMAN_DEFAULT;
+    setHeroMovie(nextHero);
     setHeroIndex(0);
     setPageLoading(false);
 
@@ -257,12 +343,55 @@ const HomePage = () => {
     }
   };
 
-  const heroMovies = moviesByRow.trending?.slice(0, 5) || [];
-  const allRowsFailed = !pageLoading && Object.keys(rowErrors).length === DISCOVERY_ROWS.length;
+  const allTmdbRowsFailed = !pageLoading &&
+    DISCOVERY_ROWS.every(row => Boolean(rowErrors[row.key]));
 
   const scrollToShelf = (key) => {
     document.getElementById(`shelf-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+
+  // Helper to normalize titles for strict deduplication
+  const normalizeMovieTitle = (title) => {
+    return String(title || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '')
+      .trim();
+  };
+
+  // Strict global deduplication across Hero, Collection, Discovery shelves, and Recommendations
+  // Ensures NO repeated movie titles anywhere on the page
+  const seenTitles = new Set();
+  if (heroMovie?.title || heroMovie?.name) {
+    const heroKey = normalizeMovieTitle(heroMovie.title || heroMovie.name);
+    if (heroKey) seenTitles.add(heroKey);
+  }
+
+  const dedupedCollection = (moviesByRow.collection || []).filter(movie => {
+    const key = normalizeMovieTitle(movie.title || movie.name);
+    if (!key || seenTitles.has(key)) return false;
+    seenTitles.add(key);
+    return true;
+  });
+
+  const dedupedDiscoveryRows = DISCOVERY_ROWS.map(row => {
+    const rawMovies = moviesByRow[row.key] || [];
+    const uniqueMovies = rawMovies.filter(movie => {
+      const key = normalizeMovieTitle(movie.title || movie.name);
+      if (!key || seenTitles.has(key)) return false;
+      seenTitles.add(key);
+      return true;
+    });
+    return { ...row, movies: uniqueMovies };
+  }).filter(row => row.movies.length > 0);
+
+  const dedupedRecommendations = (recommendations || []).filter(movie => {
+    const key = normalizeMovieTitle(movie.title || movie.name);
+    if (!key || seenTitles.has(key)) return false;
+    seenTitles.add(key);
+    return true;
+  });
 
   return (
     <div className="home-page fade-in">
@@ -276,38 +405,52 @@ const HomePage = () => {
         </div>
       ) : (
         <>
+          {/* Cinematic Hero - Spider-Man: Brand New Day */}
           <section
             className="cinematic-hero"
             style={{
-              backgroundImage: heroMovie?.backdrop_path
-                ? `url(${getImageUrl(heroMovie.backdrop_path, 'original')})`
+              backgroundImage: heroMovie?.backdrop_path || heroMovie?.backdropUrl
+                ? `url("${getImageUrl(heroMovie.backdrop_path || heroMovie.backdropUrl, 'original')}")`
                 : undefined
             }}
           >
             <div className="cinematic-hero-shade" />
             <div className="container cinematic-hero-content">
-              <span className="hero-eyebrow"><Sparkles size={14} /> Your next favorite starts here</span>
+              <span className="hero-eyebrow">
+                <Sparkles size={14} /> YOUR NEXT FAVORITE STARTS HERE
+              </span>
               {heroMovie ? (
                 <>
-                <p className="hero-kicker">Featured movie</p>
-                <h1>{heroMovie.title || heroMovie.name}</h1>
-                <div className="hero-rating">
-                  <RatingStars rating={heroMovie.vote_average} totalReviews={heroMovie.vote_count} size={16} scale={10} />
-                  {heroMovie.release_date && <span>{heroMovie.release_date.slice(0, 4)}</span>}
-                </div>
-                <p className="hero-overview">
-                  {heroMovie.overview || 'Explore the cast, story, and community reviews for this movie.'}
-                </p>
+                  <p className="hero-kicker">FEATURED MOVIE</p>
+                  <h1>{heroMovie.title || heroMovie.name}</h1>
+                  <div className="hero-rating">
+                    <Star size={16} fill="var(--gold-primary)" color="var(--gold-primary)" />
+                    <span className="hero-rating-val">
+                      {(heroMovie.vote_average ?? heroMovie.averageRating ?? 8.4).toFixed(1)}/10
+                    </span>
+                    <span className="hero-rating-count">
+                      ({heroMovie.vote_count ?? heroMovie.totalReviews ?? 4709})
+                    </span>
+                    {(heroMovie.release_date || heroMovie.releaseYear) && (
+                      <span className="hero-rating-year">
+                        {heroMovie.release_date?.slice(0, 4) || heroMovie.releaseYear}
+                      </span>
+                    )}
+                  </div>
+                  <p className="hero-overview">
+                    {heroMovie.overview || heroMovie.description || 'Explore the cast, critical reception, and community ratings for this film.'}
+                  </p>
                 </>
               ) : (
                 <>
-                  <p className="hero-kicker">CineRate discovery</p>
-                  <h1>Find your next favorite film.</h1>
+                  <p className="hero-kicker">FEATURED MOVIE</p>
+                  <h1>Spider-Man: Brand New Day</h1>
                   <p className="hero-overview">
-                    Live movie data is temporarily unavailable. Search again or retry the connection below.
+                    Fighting crime full-time as Spider-Man in a world that doesn't remember him—and the pressure of seeing his old friends move on without him—sparks a change in Peter Parker he may not have the power to control.
                   </p>
                 </>
               )}
+
               <form onSubmit={handleSearch} className="home-search">
                 <Search size={18} aria-hidden="true" />
                 <input
@@ -319,90 +462,139 @@ const HomePage = () => {
                 />
                 <button type="submit" aria-label="Search"><Search size={18} /></button>
               </form>
+
               {heroMovie && (
                 <div className="hero-actions">
-                  <Link to={`/movies/${heroMovie.id}`} className="btn btn-gold">
+                  <Link to={`/movies/${heroMovie.id || heroMovie.tmdbId}`} className="hero-btn-primary">
                     <Play size={16} fill="currentColor" /> Movie details
                   </Link>
                   <button
-                    className="btn btn-outline"
+                    className="hero-btn-secondary"
                     onClick={toggleWatchlist}
                     disabled={!watchlistReady || watchlistBusy}
                   >
-                    {watchlistBusy ? 'Saving...' : inWatchlist ? <><Check size={16} /> In Watchlist</> : <><Bookmark size={16} /> Add to Watchlist</>}
+                    {watchlistBusy ? (
+                      'Updating...'
+                    ) : inWatchlist ? (
+                      <><Check size={16} /> Saved in Watchlist</>
+                    ) : (
+                      <><Bookmark size={16} /> Add to Watchlist</>
+                    )}
                   </button>
                 </div>
               )}
               {actionError && <p className="home-action-error" role="alert">{actionError}</p>}
-              {allRowsFailed && (
-                <div style={{ maxWidth: '640px', marginTop: '1rem' }}>
-                  <ErrorAlert message={Object.values(rowErrors)[0]} onRetry={loadHome} />
-                </div>
-              )}
             </div>
-            {heroMovies.length > 1 && (
-              <div className="hero-carousel-dots" aria-label="Featured movies">
-                {heroMovies.map((movie, index) => (
-                  <button
-                    key={movie.id}
-                    type="button"
-                    className={index === heroIndex ? 'active' : ''}
-                    aria-label={`Feature ${movie.title || movie.name}`}
-                    aria-current={index === heroIndex ? 'true' : undefined}
-                    onClick={() => selectHero(movie, index)}
-                  />
-                ))}
-              </div>
-            )}
           </section>
 
           <main className="container home-content">
-            <nav className="genre-filter-bar" aria-label="Browse movie genres">
+            {/* Quick Navigation Filter Bar */}
+            <nav className="genre-filter-bar" aria-label="Browse movie categories">
+              {moviesByRow.collection?.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => scrollToShelf('collection')}
+                  style={{ borderColor: 'var(--gold-primary)', color: 'var(--gold-light)' }}
+                >
+                  <Film size={13} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                  My Collection
+                </button>
+              )}
               {GENRE_FILTERS.map(filter => (
                 <button key={filter.key} type="button" onClick={() => scrollToShelf(filter.key)}>
                   {filter.label}
                 </button>
               ))}
             </nav>
+
+            {/* Editorial Intro Banner */}
             <div className="home-intro">
               <div>
-                <span className="home-overline">CINERATE DISCOVERY</span>
-                <h2>Find a film for every mood.</h2>
-                <p>Fresh movie data from TMDB, curated into shelves for your next movie night.</p>
+                <span className="home-overline">CINERATE CONCIERGE</span>
+                <h2>Explore cinema crafted for every mood.</h2>
+                <p>Curated discovery rows, verified community ratings, and live streaming metadata.</p>
               </div>
-              <Link to="/explore" className="home-discover-link">Explore all movies <ArrowRight size={16} /></Link>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <Link to="/explore" className="home-discover-link">
+                  Browse All Films <ArrowRight size={16} />
+                </Link>
+              </div>
             </div>
 
-            {!allRowsFailed && DISCOVERY_ROWS.map(row => (
+            {/* Local Collection Shelf (strictly deduplicated against Hero) */}
+            {dedupedCollection.length > 0 && (
+              <MovieCarousel
+                key="collection"
+                title="From Your Collection"
+                description="Custom movies saved directly in your personal CineRate MySQL database"
+                movies={dedupedCollection}
+                error={null}
+                onRetry={loadHome}
+                sectionId="collection"
+                linkTo="/add-movie"
+              />
+            )}
+
+            {/* TMDB Outage Notice (if TMDB token is missing or offline) */}
+            {allTmdbRowsFailed && (
+              <div style={{ margin: '2rem 0' }}>
+                <ErrorAlert
+                  message={
+                    rowErrors.trending ||
+                    "Live TMDB connection is pending. You can still manage your local collection, sign in, and write reviews."
+                  }
+                  onRetry={loadHome}
+                />
+              </div>
+            )}
+
+            {/* Live Discovery Shelves (strictly deduplicated across all shelves) */}
+            {!allTmdbRowsFailed && dedupedDiscoveryRows.map(row => (
               <MovieCarousel
                 key={row.key}
                 title={row.title}
                 description={row.description}
-                movies={moviesByRow[row.key] || []}
+                movies={row.movies}
                 error={rowErrors[row.key]}
                 onRetry={loadHome}
                 sectionId={row.key}
-                linkTo={row.genre ? `/explore?genre=${row.genre}` : `/explore?sort=${row.key === 'topRated' ? 'vote_average.desc' : 'popularity.desc'}`}
+                linkTo={
+                  row.genre
+                    ? `/explore?genre=${row.genre}`
+                    : `/explore?sort=${row.key === 'topRated' ? 'vote_average.desc' : 'popularity.desc'}`
+                }
               />
             ))}
 
-            <MovieCarousel
-              title="Recommended For You"
-              description="Recommendations based on your watchlist, review ratings, and genre preferences"
-              movies={recommendations}
-              error={recommendationError}
-              onRetry={loadRecommendations}
-              loading={recommendationLoading}
-              linkTo="/recommendations"
-            />
+            {/* Personalized Recommendations Shelf (strictly deduplicated) */}
+            {dedupedRecommendations.length > 0 && (
+              <MovieCarousel
+                title="Recommended For You"
+                description="Algorithmic suggestions tailored to your watchlist, rated reviews, and favorite genres"
+                movies={dedupedRecommendations}
+                error={recommendationError}
+                onRetry={loadRecommendations}
+                loading={recommendationLoading}
+                linkTo="/recommendations"
+              />
+            )}
 
+            {/* Signature Recommendation CTA */}
             <section className="recommendation-cta">
               <div>
-                <span><Star size={14} /> PERSONALIZED PICKS</span>
-                <h2>Make your next pick feel personal.</h2>
-                <p>Choose a mood, language, and era to discover films matched to your taste.</p>
+                <span><Star size={14} /> CINERATE FIND MY FILM</span>
+                <h2>Find your perfect match in seconds.</h2>
+                <p>Filter by mood, runtime, language, and era for an effortless cinema night.</p>
               </div>
-              <Link to="/recommendations" className="btn btn-gold">Explore recommendations <ArrowRight size={16} /></Link>
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <Link to="/recommendations" className="btn btn-gold">
+                  Launch Concierge <ArrowRight size={16} />
+                </Link>
+                <Link to="/add-movie" className="btn btn-outline">
+                  <PlusCircle size={15} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+                  Add New Movie
+                </Link>
+              </div>
             </section>
           </main>
         </>

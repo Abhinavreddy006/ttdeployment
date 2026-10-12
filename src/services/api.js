@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 // API base URL configured from environment variable
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+const BASE_URL = import.meta.env.DEV
+  ? '/api'
+  : (import.meta.env.VITE_API_BASE_URL || '/api');
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -22,6 +24,15 @@ const TMDB_GENRE_NAMES = {
   27: 'Horror', 10402: 'Music', 9648: 'Mystery', 10749: 'Romance', 878: 'Sci-Fi',
   10770: 'TV Movie', 53: 'Thriller', 10752: 'War', 37: 'Western'
 };
+
+const movieLookupCache = new Map();
+
+const normalizeMovieTitle = value => String(value || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, ' ')
+  .trim();
 
 /**
  * Normalizes backend error messages into user-friendly strings.
@@ -57,19 +68,25 @@ export const formatErrorMessage = (error) => {
 
 /**
  * Builds TMDB image URL safely.
- * @param {string} path - e.g. "/path_to_image.jpg"
+ * @param {string} path - relative path (e.g. "/path_to_image.jpg") or full HTTP(S) URL
  * @param {string} size - e.g. "w500", "original", "w300", "w185"
  */
 export const getImageUrl = (path, size = 'w500') => {
   if (!path) return '';
-  if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  return `https://image.tmdb.org/t/p/${size}${path}`;
+  const normalizedPath = path.trim();
+  if (!normalizedPath) return '';
+  if (/^https?:\/\//i.test(normalizedPath)) return normalizedPath;
+  return `https://image.tmdb.org/t/p/${size}/${normalizedPath.replace(/^\/+/, '')}`;
 };
 
 /**
  * TMDB API services routed through Spring Boot backend
  */
 export const tmdbService = {
+  clearPosterLookupCache() {
+    movieLookupCache.clear();
+  },
+
   async getStatus() {
     try {
       const response = await apiClient.get('/tmdb/status');
@@ -147,6 +164,55 @@ export const tmdbService = {
     } catch (error) {
       throw new Error(formatErrorMessage(error));
     }
+  },
+
+  async findMovieByTitle(title, year) {
+    const expectedTitle = normalizeMovieTitle(title);
+    if (!expectedTitle) return '';
+
+    const cacheKey = `${expectedTitle}|${year || ''}`;
+    if (!movieLookupCache.has(cacheKey)) {
+      const lookup = this.searchMovies(title).then(response => {
+        const exactMatches = (response.results || []).filter(movie =>
+          [movie.title, movie.original_title, movie.name, movie.original_name]
+            .some(candidate => normalizeMovieTitle(candidate) === expectedTitle)
+        );
+        const matchingYear = year
+          ? exactMatches.find(movie => movie.release_date?.slice(0, 4) === String(year))
+          : null;
+        return matchingYear || exactMatches[0] || null;
+      }).catch(error => {
+        movieLookupCache.delete(cacheKey);
+        throw error;
+      });
+      movieLookupCache.set(cacheKey, lookup);
+    }
+    return movieLookupCache.get(cacheKey);
+  },
+
+  async getPosterByTitle(title, year) {
+    const match = await this.findMovieByTitle(title, year);
+    return match?.poster_path ? getImageUrl(match.poster_path, 'w500') : '';
+  },
+
+  async getTrailerUrl(movie) {
+    let tmdbId = movie.tmdbId || movie.id;
+    if (movie.isLocalCatalog || !/^\d+$/.test(String(tmdbId || ''))) {
+      const match = await this.findMovieByTitle(
+        movie.title || movie.name,
+        movie.release_date?.slice(0, 4) || movie.releaseYear
+      );
+      tmdbId = match?.id;
+    }
+    if (!tmdbId) return '';
+
+    const details = await this.getMovieDetails(tmdbId);
+    const trailer = (details.videos?.results || [])
+      .filter(video => video.site === 'YouTube' && video.type === 'Trailer' && video.key)
+      .sort((first, second) => Number(second.official) - Number(first.official))[0];
+    return trailer
+      ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(trailer.key)}?autoplay=1&rel=0`
+      : '';
   },
 
   async getMovieDetails(tmdbId) {
@@ -403,6 +469,14 @@ export const movieService = {
       throw new Error(formatErrorMessage(error));
     }
   },
+  async getMovieById(id) {
+    try {
+      const response = await apiClient.get(`/movies/${id}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(formatErrorMessage(error));
+    }
+  },
   async searchMoviesByTitle(title) {
     try {
       const response = await apiClient.get('/movies/search', { params: { title } });
@@ -415,8 +489,28 @@ export const movieService = {
     }
   },
   async createMovie(data) {
-    const response = await apiClient.post('/movies', data);
-    return response.data;
+    try {
+      const response = await apiClient.post('/movies', data);
+      return response.data;
+    } catch (error) {
+      throw new Error(formatErrorMessage(error));
+    }
+  },
+  async updateMovie(id, data) {
+    try {
+      const response = await apiClient.put(`/movies/${id}`, data);
+      return response.data;
+    } catch (error) {
+      throw new Error(formatErrorMessage(error));
+    }
+  },
+  async deleteMovie(id) {
+    try {
+      const response = await apiClient.delete(`/movies/${id}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(formatErrorMessage(error));
+    }
   }
 };
 

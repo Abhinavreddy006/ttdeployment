@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { tmdbService } from '../services/api';
+import { tmdbService, movieService } from '../services/api';
 import MovieCard from '../components/MovieCard';
 import Pagination from '../components/Pagination';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -113,7 +113,34 @@ const ExplorePage = () => {
       setTotalPages(Math.min(data.total_pages || 1, 50)); // Cap at 50 pages for smooth performance
       setTotalResults(data.total_results || 0);
     } catch (err) {
-      setError(err.message);
+      try {
+        const local = await movieService.getAllMovies();
+        const filtered = local.filter(m => {
+          if (debouncedSearch.trim()) {
+            return (m.title || '').toLowerCase().includes(debouncedSearch.trim().toLowerCase());
+          }
+          if (selectedGenre && selectedGenre !== 'all') {
+            return (m.genre || '').toLowerCase().includes(selectedGenre.toLowerCase());
+          }
+          return true;
+        }).map(m => ({
+          ...m,
+          isLocalCatalog: true,
+          id: m.tmdbId || m.id,
+          tmdbId: m.tmdbId || m.id,
+          poster_path: m.poster_path || m.posterPath || m.posterUrl,
+          backdrop_path: m.backdrop_path || m.backdropPath || m.backdropUrl,
+          vote_average: m.vote_average ?? m.voteAverage ?? m.averageRating,
+          vote_count: m.vote_count ?? m.voteCount ?? m.totalReviews,
+          release_date: m.release_date || (m.releaseYear ? `${m.releaseYear}-01-01` : '')
+        }));
+        setMovies(filtered);
+        setTotalPages(1);
+        setTotalResults(filtered.length);
+        setError(null);
+      } catch {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }

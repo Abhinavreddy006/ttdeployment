@@ -1,0 +1,69 @@
+/* ==========================================================================
+   CineRate Application Shell & Utility Styles
+   ========================================================================== */
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  color: var(--text-ivory);
+  position: relative;
+}
+
+.app-main-content {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+/* Page entrance motion */
+.page-container {
+  animation: pageEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Global scrollbar styling */
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080812;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2b2244;
+  border-radius: 6px;
+  border: 2px solid #080812;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4b3676;
+}
+
+/* Glass card enhancement */
+.glass-panel {
+  background: rgba(17, 17, 28, 0.7);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+/* Focus styles for keyboard accessibility */
+:focus-visible {
+  outline: 2px solid var(--gold-primary);
+  outline-offset: 3px;
+}

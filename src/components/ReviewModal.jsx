@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Star, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
-import { reviewService } from '../services/api';
+import { reviewService, authService } from '../services/api';
 
 const MOOD_FEELINGS = [
   'Laughing',
@@ -24,6 +24,18 @@ const ReviewModal = ({ isOpen, onClose, movie, onReviewSubmitted }) => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      authService.getCurrentUser()
+        .then(user => {
+          if (user?.displayName && !authorName) {
+            setAuthorName(user.displayName);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOpen]);
 
   if (!isOpen || !movie) return null;
 

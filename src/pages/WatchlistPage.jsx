@@ -38,7 +38,7 @@ const WatchlistPage = () => {
     setActionError(null);
     try {
       await watchlistService.removeFromWatchlist(tmdbId);
-      setWatchlist(prev => prev.filter(item => item.tmdbId !== tmdbId));
+      setWatchlist(prev => prev.filter(item => (item.tmdbId !== tmdbId && item.id !== tmdbId && item.movieId !== tmdbId)));
     } catch (err) {
       setActionError(err.message);
     } finally {

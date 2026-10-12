@@ -147,6 +147,58 @@
   background: linear-gradient(120deg, #bc5bfa, #843de7);
 }
 
+.navbar-user-profile {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.navbar-user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(142, 68, 240, 0.15);
+  border: 1px solid rgba(171, 112, 255, 0.35);
+  border-radius: 999px;
+  color: #eedcff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  max-width: 140px;
+}
+
+.navbar-user-badge .user-icon {
+  color: #d2a7ff;
+  flex-shrink: 0;
+}
+
+.navbar-user-badge .user-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navbar-logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: rgba(224, 82, 99, 0.1);
+  border: 1px solid rgba(224, 82, 99, 0.3);
+  border-radius: 999px;
+  color: #ff9da8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.navbar-logout-btn:hover {
+  background: rgba(224, 82, 99, 0.25);
+  border-color: #ff6b7d;
+  color: #fff;
+}
+
 .menu-toggle {
   display: none;
   background: transparent;

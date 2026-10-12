@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { tmdbService, reviewService, watchlistService, getImageUrl } from '../services/api';
+import { tmdbService, reviewService, watchlistService, movieService, getImageUrl } from '../services/api';
 import PosterImage from '../components/PosterImage';
 import RatingStars from '../components/RatingStars';
 import MovieCard from '../components/MovieCard';
@@ -58,13 +58,38 @@ const MovieDetailsPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await tmdbService.getMovieDetails(id);
+      let data;
+      try {
+        data = await tmdbService.getMovieDetails(id);
+      } catch (tmdbErr) {
+        // Fallback to local Spring Boot database movie by ID or TMDB ID
+        const local = await movieService.getMovieById(id);
+        if (local && (local.title || local.id)) {
+          data = {
+            ...local,
+            id: local.tmdbId || local.id,
+            tmdbId: local.tmdbId || local.id,
+            title: local.title,
+            overview: local.description || local.overview || 'A feature film in your personal collection.',
+            poster_path: local.posterUrl || local.posterPath || local.poster_path,
+            backdrop_path: local.backdropUrl || local.backdropPath || local.backdrop_path || local.posterUrl,
+            vote_average: local.averageRating ?? local.vote_average ?? 8.0,
+            vote_count: local.totalReviews ?? local.vote_count ?? 150,
+            release_date: local.releaseYear ? `${local.releaseYear}-01-01` : (local.release_date || ''),
+            genres: (local.genre || 'Cinema').split(',').map((g, idx) => ({ id: idx, name: g.trim() })),
+            isLocalCatalog: true
+          };
+        } else {
+          throw tmdbErr;
+        }
+      }
+
       setMovie(data);
       setWatchlistStatusKnown(false);
       setWatchlistError(null);
       setLoading(false);
 
-      void watchlistService.checkWatchlist(id)
+      void watchlistService.checkWatchlist(data.id || id)
         .then((inWatchlistResult) => {
           setInWatchlist(inWatchlistResult);
           setWatchlistStatusKnown(true);
