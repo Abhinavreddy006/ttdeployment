@@ -396,8 +396,8 @@ const HomePage = () => {
             className="cinematic-hero"
             style={{
               backgroundImage: (featuredMovie?.backdrop_path || featuredMovie?.backdropPath)
-                ? `url("${getBackdropUrl(featuredMovie.backdrop_path || featuredMovie.backdropPath)}")`
-                : undefined
+                ? `url("${getBackdropUrl(featuredMovie.backdrop_path || featuredMovie.backdropPath, featuredMovie.title || featuredMovie.name)}")`
+                : (featuredMovie ? `url("${getBackdropUrl(null, featuredMovie.title || featuredMovie.name)}")` : undefined)
             }}
           >
             <div className="cinematic-hero-shade" />

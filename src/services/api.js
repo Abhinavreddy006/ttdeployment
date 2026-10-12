@@ -79,6 +79,59 @@ export const getImageUrl = (path, size = 'w500') => {
   return `https://image.tmdb.org/t/p/${size}/${normalizedPath.replace(/^\/+/, '')}`;
 };
 
+const BROKEN_POSTER_REPLACEMENTS = {
+  '9w019B9K12erA324': 'https://image.tmdb.org/t/p/w500/wTnV3PCVW5O92JMrFvvrRcV39RU.jpg',
+  '8cdWjvZ211M13968': 'https://image.tmdb.org/t/p/w500/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg'
+};
+
+const sanitizeMovieItem = (movie) => {
+  if (!movie || typeof movie !== 'object') return movie;
+  const title = String(movie.title || movie.name || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+
+  let poster = movie.poster_path || movie.posterPath || movie.posterUrl || movie.imageUrl || movie.image_url;
+  let backdrop = movie.backdrop_path || movie.backdropPath || movie.backdropUrl;
+
+  if (title === 'the wild robot' || title === 'wild robot' || (typeof poster === 'string' && poster.includes('9w019B9K12erA324'))) {
+    poster = 'https://image.tmdb.org/t/p/w500/wTnV3PCVW5O92JMrFvvrRcV39RU.jpg';
+    if (!backdrop || String(backdrop).includes('undefined') || !String(backdrop).trim()) {
+      backdrop = 'https://image.tmdb.org/t/p/original/eG9lz41mJqsI4J6ubMtVqD26q2J.jpg';
+    }
+  } else if (title.includes('deadpool') || (typeof poster === 'string' && poster.includes('8cdWjvZ211M13968'))) {
+    poster = 'https://image.tmdb.org/t/p/w500/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg';
+    if (!backdrop || String(backdrop).includes('undefined') || !String(backdrop).trim()) {
+      backdrop = 'https://image.tmdb.org/t/p/original/yDHYTfA3R0jFYba16jBB1ef8oIt.jpg';
+    }
+  }
+
+  return {
+    ...movie,
+    poster_path: poster || movie.poster_path,
+    posterPath: poster || movie.posterPath,
+    posterUrl: poster || movie.posterUrl,
+    backdrop_path: backdrop || movie.backdrop_path,
+    backdropPath: backdrop || movie.backdropPath,
+    backdropUrl: backdrop || movie.backdropUrl
+  };
+};
+
+const sanitizeMovieResults = (data) => {
+  if (!data) return data;
+  if (Array.isArray(data)) {
+    return data.map(sanitizeMovieItem);
+  }
+  if (Array.isArray(data.results)) {
+    return {
+      ...data,
+      results: data.results.map(sanitizeMovieItem)
+    };
+  }
+  return sanitizeMovieItem(data);
+};
+
 /**
  * TMDB API services routed through Spring Boot backend
  */
@@ -111,7 +164,7 @@ export const tmdbService = {
       const response = await apiClient.get('/tmdb/trending', {
         params: { timeWindow, page }
       });
-      return response.data;
+      return sanitizeMovieResults(response.data);
     } catch (error) {
       throw new Error(formatErrorMessage(error));
     }
@@ -120,7 +173,7 @@ export const tmdbService = {
   async getPopular(page = 1) {
     try {
       const response = await apiClient.get('/tmdb/popular', { params: { page } });
-      return response.data;
+      return sanitizeMovieResults(response.data);
     } catch (error) {
       throw new Error(formatErrorMessage(error));
     }
@@ -129,7 +182,7 @@ export const tmdbService = {
   async getTopRated(page = 1) {
     try {
       const response = await apiClient.get('/tmdb/top-rated', { params: { page } });
-      return response.data;
+      return sanitizeMovieResults(response.data);
     } catch (error) {
       throw new Error(formatErrorMessage(error));
     }
@@ -138,7 +191,7 @@ export const tmdbService = {
   async getNowPlaying(page = 1) {
     try {
       const response = await apiClient.get('/tmdb/now-playing', { params: { page } });
-      return response.data;
+      return sanitizeMovieResults(response.data);
     } catch (error) {
       throw new Error(formatErrorMessage(error));
     }
@@ -147,7 +200,7 @@ export const tmdbService = {
   async getUpcoming(page = 1) {
     try {
       const response = await apiClient.get('/tmdb/upcoming', { params: { page } });
-      return response.data;
+      return sanitizeMovieResults(response.data);
     } catch (error) {
       throw new Error(formatErrorMessage(error));
     }
@@ -170,7 +223,7 @@ export const tmdbService = {
       const params = { query, page };
       if (language && language !== 'all') params.language = language;
       const response = await apiClient.get('/tmdb/search', { params });
-      return response.data;
+      return sanitizeMovieResults(response.data);
     } catch (error) {
       throw new Error(formatErrorMessage(error));
     }
@@ -228,7 +281,7 @@ export const tmdbService = {
   async getMovieDetails(tmdbId) {
     try {
       const response = await apiClient.get(`/tmdb/movie/${tmdbId}`);
-      return response.data;
+      return sanitizeMovieResults(response.data);
     } catch (error) {
       throw new Error(formatErrorMessage(error));
     }
@@ -241,7 +294,7 @@ export const tmdbService = {
       if (withGenres && withGenres !== 'all') params.withGenres = withGenres;
       if (year) params.year = year;
       const response = await apiClient.get('/tmdb/discover', { params });
-      return response.data;
+      return sanitizeMovieResults(response.data);
     } catch (error) {
       throw new Error(formatErrorMessage(error));
     }
@@ -474,7 +527,7 @@ export const movieService = {
       if (!Array.isArray(response.data)) {
         throw new Error('The movie service returned an invalid response.');
       }
-      return response.data;
+      return response.data.map(sanitizeMovieItem);
     } catch (error) {
       throw new Error(formatErrorMessage(error));
     }
@@ -482,7 +535,7 @@ export const movieService = {
   async getMovieById(id) {
     try {
       const response = await apiClient.get(`/movies/${id}`);
-      return response.data;
+      return sanitizeMovieItem(response.data);
     } catch (error) {
       throw new Error(formatErrorMessage(error));
     }

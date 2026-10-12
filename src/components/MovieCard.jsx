@@ -42,7 +42,7 @@ const MovieCard = ({ movie, onRemove }) => {
     movie.image_url ||
     movie.posterUrl;
 
-  const posterSrc = getPosterUrl(rawPoster);
+  const posterSrc = getPosterUrl(rawPoster, title);
   const rating = movie.vote_average ?? movie.averageRating ?? 0;
   const ratingNumber = Number(rating);
   const accessibleRating = Number.isFinite(ratingNumber) ? ratingNumber : 0;
@@ -112,7 +112,10 @@ const MovieCard = ({ movie, onRemove }) => {
               loading="lazy"
               onError={(e) => {
                 e.target.onerror = null; 
-                e.target.src = 'https://via.placeholder.com/500x750?text=No+Poster+Available';
+                const fallback = getPosterUrl(null, title);
+                e.target.src = (fallback && !fallback.includes('via.placeholder.com'))
+                  ? fallback
+                  : 'https://via.placeholder.com/500x750?text=No+Poster+Available';
               }}
             />
           </Link>
