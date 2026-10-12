@@ -96,7 +96,17 @@ export const tmdbService = {
     }
   },
 
-  async getTrending(timeWindow = 'week', page = 1) {
+  async getTrending(firstArg = 'week', secondArg = 1) {
+    let timeWindow = 'week';
+    let page = 1;
+    if (typeof firstArg === 'number') {
+      page = firstArg;
+    } else if (typeof firstArg === 'string') {
+      timeWindow = firstArg;
+      if (typeof secondArg === 'number') {
+        page = secondArg;
+      }
+    }
     try {
       const response = await apiClient.get('/tmdb/trending', {
         params: { timeWindow, page }

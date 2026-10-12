@@ -20,6 +20,7 @@ import {
   tmdbService,
   watchlistService
 } from '../services/api';
+import { getBackdropUrl, getPosterUrl } from '../utils/imageUtils';
 import ErrorAlert from '../components/ErrorAlert';
 import MovieCard from '../components/MovieCard';
 import RatingStars from '../components/RatingStars';
@@ -182,7 +183,7 @@ const HomePage = () => {
   const navigate = useNavigate();
   const [moviesByRow, setMoviesByRow] = useState({});
   const [rowErrors, setRowErrors] = useState({});
-  const [heroMovie, setHeroMovie] = useState(null);
+  const [featuredMovie, setFeaturedMovie] = useState(null);
   const [heroIndex, setHeroIndex] = useState(0);
   const [pageLoading, setPageLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -259,41 +260,26 @@ const HomePage = () => {
     setMoviesByRow(newMoviesByRow);
     setRowErrors(newRowErrors);
 
-    // Featured spotlight hero: Spider-Man: Brand New Day
-    const spidermanMatch = collectionMovies.find(m => {
-      const norm = (m.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      return norm.includes('spiderman') && norm.includes('brandnewday');
-    });
+    // Dynamically bind featuredMovie to the first movie from trending list,
+    // falling back to local collection or popular releases
+    const trendingList = newMoviesByRow.trending || [];
+    const featured = (trendingList.length > 0)
+      ? trendingList[0]
+      : (collectionMovies.length > 0
+          ? collectionMovies[0]
+          : ((newMoviesByRow.popular && newMoviesByRow.popular.length > 0) ? newMoviesByRow.popular[0] : null));
 
-    const SPIDERMAN_DEFAULT = {
-      id: 28,
-      tmdbId: 12445,
-      title: 'Spider-Man: Brand New Day',
-      overview: "Fighting crime full-time as Spider-Man in a world that doesn't remember him—and the pressure of seeing his old friends move on without him—sparks a change in Peter Parker he may not have the power to control. But that transformation...",
-      release_date: '2026-01-01',
-      releaseYear: 2026,
-      vote_average: 8.4,
-      vote_count: 4709,
-      averageRating: 8.4,
-      totalReviews: 4709,
-      posterUrl: 'https://image.tmdb.org/t/p/w500/iuFNMS8U5cb6xfzi51Dbkovj7vM.jpg',
-      poster_path: 'https://image.tmdb.org/t/p/w500/iuFNMS8U5cb6xfzi51Dbkovj7vM.jpg',
-      backdropUrl: 'https://image.tmdb.org/t/p/w500/iuFNMS8U5cb6xfzi51Dbkovj7vM.jpg',
-      backdrop_path: 'https://image.tmdb.org/t/p/w500/iuFNMS8U5cb6xfzi51Dbkovj7vM.jpg'
-    };
-
-    const nextHero = spidermanMatch || collectionMovies[0] || SPIDERMAN_DEFAULT;
-    setHeroMovie(nextHero);
+    setFeaturedMovie(featured);
     setHeroIndex(0);
     setPageLoading(false);
 
-    if (nextHero) {
-      await checkHeroWatchlist(nextHero);
+    if (featured) {
+      await checkHeroWatchlist(featured);
     }
   };
 
   const selectHero = async (movie, index) => {
-    setHeroMovie(movie);
+    setFeaturedMovie(movie);
     setHeroIndex(index);
     await checkHeroWatchlist(movie);
   };
@@ -326,14 +312,14 @@ const HomePage = () => {
   };
 
   const toggleWatchlist = async () => {
-    if (!heroMovie || !watchlistReady || watchlistBusy) return;
+    if (!featuredMovie || !watchlistReady || watchlistBusy) return;
     setWatchlistBusy(true);
     setActionError(null);
     try {
       if (inWatchlist) {
-        await watchlistService.removeFromWatchlist(heroMovie.id);
+        await watchlistService.removeFromWatchlist(featuredMovie.id);
       } else {
-        await watchlistService.addToWatchlist(heroMovie);
+        await watchlistService.addToWatchlist(featuredMovie);
       }
       setInWatchlist(!inWatchlist);
     } catch (error) {
@@ -363,8 +349,8 @@ const HomePage = () => {
   // Strict global deduplication across Hero, Collection, Discovery shelves, and Recommendations
   // Ensures NO repeated movie titles anywhere on the page
   const seenTitles = new Set();
-  if (heroMovie?.title || heroMovie?.name) {
-    const heroKey = normalizeMovieTitle(heroMovie.title || heroMovie.name);
+  if (featuredMovie?.title || featuredMovie?.name) {
+    const heroKey = normalizeMovieTitle(featuredMovie.title || featuredMovie.name);
     if (heroKey) seenTitles.add(heroKey);
   }
 
@@ -405,12 +391,12 @@ const HomePage = () => {
         </div>
       ) : (
         <>
-          {/* Cinematic Hero - Spider-Man: Brand New Day */}
+          {/* Dynamic Featured / Hero Banner Alignment */}
           <section
             className="cinematic-hero"
             style={{
-              backgroundImage: heroMovie?.backdrop_path || heroMovie?.backdropUrl
-                ? `url("${getImageUrl(heroMovie.backdrop_path || heroMovie.backdropUrl, 'original')}")`
+              backgroundImage: (featuredMovie?.backdrop_path || featuredMovie?.backdropPath)
+                ? `url("${getBackdropUrl(featuredMovie.backdrop_path || featuredMovie.backdropPath)}")`
                 : undefined
             }}
           >
@@ -419,34 +405,28 @@ const HomePage = () => {
               <span className="hero-eyebrow">
                 <Sparkles size={14} /> YOUR NEXT FAVORITE STARTS HERE
               </span>
-              {heroMovie ? (
+              {featuredMovie && (
                 <>
                   <p className="hero-kicker">FEATURED MOVIE</p>
-                  <h1>{heroMovie.title || heroMovie.name}</h1>
+                  <h1>{featuredMovie?.title || featuredMovie?.name}</h1>
                   <div className="hero-rating">
                     <Star size={16} fill="var(--gold-primary)" color="var(--gold-primary)" />
                     <span className="hero-rating-val">
-                      {(heroMovie.vote_average ?? heroMovie.averageRating ?? 8.4).toFixed(1)}/10
+                      {(featuredMovie.vote_average ?? featuredMovie.averageRating ?? 0).toFixed(1)}/10
                     </span>
-                    <span className="hero-rating-count">
-                      ({heroMovie.vote_count ?? heroMovie.totalReviews ?? 4709})
-                    </span>
-                    {(heroMovie.release_date || heroMovie.releaseYear) && (
+                    {(featuredMovie.vote_count ?? featuredMovie.totalReviews) ? (
+                      <span className="hero-rating-count">
+                        ({featuredMovie.vote_count ?? featuredMovie.totalReviews})
+                      </span>
+                    ) : null}
+                    {(featuredMovie.release_date || featuredMovie.releaseYear) && (
                       <span className="hero-rating-year">
-                        {heroMovie.release_date?.slice(0, 4) || heroMovie.releaseYear}
+                        {(featuredMovie.release_date || '').slice(0, 4) || featuredMovie.releaseYear}
                       </span>
                     )}
                   </div>
                   <p className="hero-overview">
-                    {heroMovie.overview || heroMovie.description || 'Explore the cast, critical reception, and community ratings for this film.'}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="hero-kicker">FEATURED MOVIE</p>
-                  <h1>Spider-Man: Brand New Day</h1>
-                  <p className="hero-overview">
-                    Fighting crime full-time as Spider-Man in a world that doesn't remember him—and the pressure of seeing his old friends move on without him—sparks a change in Peter Parker he may not have the power to control.
+                    {featuredMovie?.overview || featuredMovie?.description || 'Explore the cast, critical reception, and community ratings for this film.'}
                   </p>
                 </>
               )}
@@ -463,9 +443,9 @@ const HomePage = () => {
                 <button type="submit" aria-label="Search"><Search size={18} /></button>
               </form>
 
-              {heroMovie && (
+              {featuredMovie && (
                 <div className="hero-actions">
-                  <Link to={`/movies/${heroMovie.id || heroMovie.tmdbId}`} className="hero-btn-primary">
+                  <Link to={`/movies/${featuredMovie.id || featuredMovie.tmdbId}`} className="hero-btn-primary">
                     <Play size={16} fill="currentColor" /> Movie details
                   </Link>
                   <button

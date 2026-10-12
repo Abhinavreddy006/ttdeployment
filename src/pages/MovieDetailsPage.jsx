@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { tmdbService, reviewService, watchlistService, movieService, getImageUrl } from '../services/api';
+import { getPosterUrl, getBackdropUrl } from '../utils/imageUtils';
 import PosterImage from '../components/PosterImage';
 import RatingStars from '../components/RatingStars';
 import MovieCard from '../components/MovieCard';
@@ -173,7 +174,9 @@ const MovieDetailsPage = () => {
         position: 'relative',
         minHeight: '480px',
         backgroundColor: '#070a10',
-        backgroundImage: movie.backdrop_path ? `url(${getImageUrl(movie.backdrop_path, 'original')})` : 'none',
+        backgroundImage: (movie.backdrop_path || movie.backdropPath || movie.backdropUrl)
+          ? `url(${getBackdropUrl(movie.backdrop_path || movie.backdropPath || movie.backdropUrl)})`
+          : 'none',
         backgroundSize: 'cover',
         backgroundPosition: 'center 25%',
         display: 'flex',
@@ -220,9 +223,18 @@ const MovieDetailsPage = () => {
               overflow: 'hidden',
               boxShadow: 'var(--shadow-lg), 0 0 30px rgba(0, 0, 0, 0.8)',
               border: '1px solid var(--border-medium)',
-              width: '100%'
+              width: '100%',
+              aspectRatio: '2/3'
             }}>
-              <PosterImage src={movie.poster_path} alt={movie.title} aspectRatio="2/3" />
+              <img
+                src={getPosterUrl(movie.poster_path || movie.posterPath || movie.posterUrl || movie.imageUrl || movie.image_url)}
+                alt={movie.title || movie.name || 'Movie Poster'}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = 'https://via.placeholder.com/500x750?text=No+Poster+Available';
+                }}
+              />
             </div>
 
             {/* Title & Metadata */}
@@ -587,9 +599,13 @@ const MovieDetailsPage = () => {
                       }}
                     >
                       <img
-                        src={getImageUrl(sim.poster_path, 'w185')}
-                        alt={sim.title}
+                        src={getPosterUrl(sim.poster_path || sim.posterPath || sim.posterUrl)}
+                        alt={sim.title || sim.name || 'Movie Poster'}
                         style={{ width: '45px', height: '64px', objectFit: 'cover', borderRadius: '4px' }}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://via.placeholder.com/500x750?text=No+Poster+Available';
+                        }}
                       />
                       <div>
                         <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-ivory)', marginBottom: '0.2rem' }}>

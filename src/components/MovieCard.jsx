@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
-import PosterImage, { getPosterUrl } from './PosterImage';
+import { getPosterUrl } from '../utils/imageUtils';
 import RatingStars from './RatingStars';
 import { Calendar, Globe, Play, Star, Trash2, X } from 'lucide-react';
 import { tmdbService } from '../services/api';
@@ -34,8 +34,15 @@ const MovieCard = ({ movie, onRemove }) => {
   if (!id) return null;
 
   const title = movie.title || movie.name || 'Untitled';
-  const poster = movie.poster_path || movie.posterPath || movie.imageUrl || movie.posterUrl || movie.image;
-  const posterSrc = getPosterUrl(poster, 'w500');
+  const rawPoster = 
+    movie.poster_path || 
+    movie.posterPath || 
+    movie.poster || 
+    movie.imageUrl || 
+    movie.image_url ||
+    movie.posterUrl;
+
+  const posterSrc = getPosterUrl(rawPoster);
   const rating = movie.vote_average ?? movie.averageRating ?? 0;
   const ratingNumber = Number(rating);
   const accessibleRating = Number.isFinite(ratingNumber) ? ratingNumber : 0;
@@ -98,13 +105,16 @@ const MovieCard = ({ movie, onRemove }) => {
             onClick={handleMovieOpen}
             aria-label={`${title}${releaseYear ? `, ${releaseYear}` : ''}, rated ${accessibleRating.toFixed(1)} out of 10`}
           >
-          <PosterImage
-            src={posterSrc}
-            alt={title}
-            className="movie-card-poster"
-            releaseYear={releaseYear}
-            lookupByTitle={true}
-          />
+            <img 
+              src={posterSrc} 
+              alt={movie.title || movie.name || 'Movie Poster'} 
+              className="movie-card-image"
+              loading="lazy"
+              onError={(e) => {
+                e.target.onerror = null; 
+                e.target.src = 'https://via.placeholder.com/500x750?text=No+Poster+Available';
+              }}
+            />
           </Link>
 
           {Number.isFinite(ratingNumber) && ratingNumber > 0 && (

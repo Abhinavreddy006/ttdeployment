@@ -127,9 +127,12 @@ const WatchlistPage = () => {
               <MovieCard
                 key={item.id || item.tmdbId}
                 movie={{
-                  id: item.movieId || item.tmdbId,
+                  id: item.movieId || item.tmdbId || item.id,
+                  tmdbId: item.tmdbId || item.movieId || item.id,
                   title: item.title,
                   posterUrl: item.posterUrl,
+                  poster_path: item.posterUrl || item.poster_path || item.posterPath,
+                  imageUrl: item.posterUrl || item.imageUrl,
                   genre: item.genre,
                   releaseYear: item.releaseYear,
                   averageRating: item.voteAverage,
