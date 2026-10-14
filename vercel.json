@@ -2,6 +2,14 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
+      "source": "/api/:match*",
+      "destination": "https://cinerate-backend.onrender.com/api/:match*"
+    },
+    {
+      "source": "/health",
+      "destination": "https://cinerate-backend.onrender.com/health"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

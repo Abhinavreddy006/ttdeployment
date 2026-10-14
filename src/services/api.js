@@ -1,9 +1,16 @@
 import axios from 'axios';
 
-// API base URL configured from environment variable
-const BASE_URL = import.meta.env.DEV
-  ? '/api'
-  : (import.meta.env.VITE_API_BASE_URL || '/api');
+// API base URL configured from environment variable or proxy rewrite
+const resolveBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl && envUrl.trim()) {
+    const trimmed = envUrl.trim().replace(/\/+$/, '');
+    return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+  }
+  return '/api';
+};
+
+const BASE_URL = resolveBaseUrl();
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -15,7 +22,7 @@ const apiClient = axios.create({
   withXSRFToken: true,
   xsrfCookieName: 'XSRF-TOKEN',
   xsrfHeaderName: 'X-XSRF-TOKEN',
-  timeout: 10000 // 10-second timeout
+  timeout: 45000 // 45-second timeout to accommodate Render free-tier cold starts
 });
 
 const TMDB_GENRE_NAMES = {
@@ -38,12 +45,15 @@ const normalizeMovieTitle = value => String(value || '')
  * Normalizes backend error messages into user-friendly strings.
  */
 export const formatErrorMessage = (error) => {
+  if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+    return 'The backend server took longer than expected to respond (it may be waking up on Render free tier). Please wait a moment and try again.';
+  }
   if (
     error.code === 'ERR_NETWORK' ||
     error.message?.includes('Network Error') ||
     (error.isAxiosError && !error.response)
   ) {
-    return 'Unable to connect to the CineRate backend at ' + BASE_URL + '. Please ensure your Spring Boot server is running.';
+    return `Unable to connect to the CineRate backend (${BASE_URL}). The Render instance may still be starting up. Please wait 30 seconds and refresh.`;
   }
   if (!error.response && error.message) return error.message;
   if (error.response?.status === 503) {

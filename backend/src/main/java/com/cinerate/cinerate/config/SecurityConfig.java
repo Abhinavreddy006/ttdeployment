@@ -79,20 +79,15 @@ public class SecurityConfig {
                 "DELETE", "OPTIONS"
         ));
 
-        configuration.setAllowedHeaders(List.of(
-                "Accept",
-                "Authorization",
-                "Content-Type",
-                "X-Requested-With",
-                "X-XSRF-TOKEN"
-        ));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setExposedHeaders(List.of("Set-Cookie", "X-XSRF-TOKEN"));
 
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
 
-        source.registerCorsConfiguration("/api/**", configuration);
+        source.registerCorsConfiguration("/**", configuration);
 
         return source;
     }
@@ -114,6 +109,8 @@ public class SecurityConfig {
                     .csrfTokenRequestHandler(
                             new CsrfTokenRequestAttributeHandler())
                     .ignoringRequestMatchers(
+                            "/health",
+                            "/api/health",
                             "/api/reviews/**",
                             "/api/watchlist/**",
                             "/api/movies/**",
@@ -132,6 +129,7 @@ public class SecurityConfig {
 
             .authorizeHttpRequests(authorize -> authorize
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    .requestMatchers("/health", "/api/health").permitAll()
                     .requestMatchers("/api/auth/**").permitAll()
                     .anyRequest().permitAll())
 

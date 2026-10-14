@@ -5,7 +5,7 @@ services:
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     plan: free
-    healthCheckPath: /api/movies
+    healthCheckPath: /health
     envVars:
       - key: PORT
         value: 8080
