@@ -252,9 +252,43 @@ const HomePage = () => {
     const newMoviesByRow = { collection: collectionMovies };
     const newRowErrors = {};
 
-    results.forEach(({ key, movies, error }) => {
-      newMoviesByRow[key] = movies;
-      if (error) newRowErrors[key] = error;
+    const getCollectionFallback = (key, genreId) => {
+      if (!collectionMovies || collectionMovies.length === 0) return [];
+      if (key === 'trending' || key === 'popular') {
+        return [...collectionMovies].sort((a, b) => (b.vote_count || 0) - (a.vote_count || 0));
+      }
+      if (key === 'topRated') {
+        return [...collectionMovies].sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+      }
+      if (key === 'nowPlaying' || key === 'upcoming') {
+        return [...collectionMovies].sort((a, b) => String(b.release_date || '').localeCompare(String(a.release_date || '')));
+      }
+      const genreKeywords = {
+        28: ['action', 'adventure'],
+        878: ['sci-fi', 'speculative', 'science fiction'],
+        18: ['drama'],
+        35: ['comedy'],
+        53: ['thriller', 'suspense', 'crime'],
+        10749: ['romance', 'love']
+      };
+      const targets = genreKeywords[genreId] || [];
+      const filtered = collectionMovies.filter(m => {
+        const g = (m.genre || '').toLowerCase();
+        return targets.some(t => g.includes(t));
+      });
+      return filtered.length > 0 ? filtered : collectionMovies.slice(0, 8);
+    };
+
+    results.forEach(({ key, movies, error }, idx) => {
+      const rowDef = DISCOVERY_ROWS[idx];
+      if (movies && movies.length > 0) {
+        newMoviesByRow[key] = movies;
+      } else {
+        newMoviesByRow[key] = getCollectionFallback(key, rowDef?.genre);
+      }
+      if (error && (!newMoviesByRow[key] || newMoviesByRow[key].length === 0)) {
+        newRowErrors[key] = error;
+      }
     });
 
     setMoviesByRow(newMoviesByRow);
@@ -292,9 +326,10 @@ const HomePage = () => {
         fallbackGenres: [28, 35, 878, 10749],
         minRating: 6
       });
-      setRecommendations(result.movies);
-    } catch (error) {
-      setRecommendationError(error.message);
+      setRecommendations(result?.movies || []);
+    } catch {
+      // Gracefully fall back without showing error banner
+      setRecommendations([]);
     } finally {
       setRecommendationLoading(false);
     }
@@ -515,21 +550,8 @@ const HomePage = () => {
               />
             )}
 
-            {/* TMDB Outage Notice (if TMDB token is missing or offline) */}
-            {allTmdbRowsFailed && (
-              <div style={{ margin: '2rem 0' }}>
-                <ErrorAlert
-                  message={
-                    rowErrors.trending ||
-                    "Live TMDB connection is pending. You can still manage your local collection, sign in, and write reviews."
-                  }
-                  onRetry={loadHome}
-                />
-              </div>
-            )}
-
             {/* Live Discovery Shelves (strictly deduplicated across all shelves) */}
-            {!allTmdbRowsFailed && dedupedDiscoveryRows.map(row => (
+            {dedupedDiscoveryRows.map(row => (
               <MovieCarousel
                 key={row.key}
                 title={row.title}

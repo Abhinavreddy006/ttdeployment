@@ -27,26 +27,32 @@ public class DataInitializer implements CommandLineRunner {
                 seedMovies();
                 logger.info("Database successfully seeded with 28 movies.");
             } else {
-                // Ensure Spider-Man: Brand New Day exists
-                boolean hasSpiderman = movieRepository.findAll().stream()
-                        .anyMatch(m -> m.getTitle() != null && m.getTitle().toLowerCase().contains("spider-man: brand new day"));
-                if (!hasSpiderman) {
-                    Movie spiderman = createMovie(
-                            12445L,
-                            "Spider-Man: Brand New Day",
-                            "Fighting crime full-time as Spider-Man in a world that doesn't remember him—and the pressure of seeing his old friends move on without him—sparks a change in Peter Parker he may not have the power to control. But that transformation...",
-                            "Action, Sci-Fi, Adventure",
-                            "English",
-                            2026,
-                            "Destin Daniel Cretton",
-                            "https://image.tmdb.org/t/p/w500/iuFNMS8U5cb6xfzi51Dbkovj7vM.jpg",
-                            "https://image.tmdb.org/t/p/w500/iuFNMS8U5cb6xfzi51Dbkovj7vM.jpg",
-                            8.4,
-                            4709
-                    );
-                    movieRepository.save(spiderman);
-                    logger.info("Added Spider-Man: Brand New Day to catalog.");
-                }
+                // Ensure Spider-Man: Brand New Day exists and has authentic artwork
+                movieRepository.findAll().stream()
+                        .filter(m -> m.getTitle() != null && m.getTitle().toLowerCase().contains("spider-man: brand new day"))
+                        .findFirst()
+                        .ifPresentOrElse(spiderman -> {
+                            spiderman.setPosterUrl("https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg");
+                            spiderman.setBackdropUrl("https://image.tmdb.org/t/p/original/14QbnygCuTO0vl7CAFmPf1fgZfV.jpg");
+                            movieRepository.save(spiderman);
+                            logger.info("Updated Spider-Man: Brand New Day with authentic artwork.");
+                        }, () -> {
+                            Movie spiderman = createMovie(
+                                    12445L,
+                                    "Spider-Man: Brand New Day",
+                                    "Fighting crime full-time as Spider-Man in a world that doesn't remember him—and the pressure of seeing his old friends move on without him—sparks a change in Peter Parker he may not have the power to control. But that transformation...",
+                                    "Action, Sci-Fi, Adventure",
+                                    "English",
+                                    2026,
+                                    "Destin Daniel Cretton",
+                                    "https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg",
+                                    "https://image.tmdb.org/t/p/original/14QbnygCuTO0vl7CAFmPf1fgZfV.jpg",
+                                    8.4,
+                                    4709
+                            );
+                            movieRepository.save(spiderman);
+                            logger.info("Added Spider-Man: Brand New Day to catalog.");
+                        });
             }
         } catch (Exception e) {
             logger.warn("Database initialization skipped or encountered error: {}", e.getMessage());
@@ -58,8 +64,8 @@ public class DataInitializer implements CommandLineRunner {
                 createMovie(12445L, "Spider-Man: Brand New Day",
                         "Fighting crime full-time as Spider-Man in a world that doesn't remember him—and the pressure of seeing his old friends move on without him—sparks a change in Peter Parker he may not have the power to control. But that transformation...",
                         "Action, Sci-Fi, Adventure", "English", 2026, "Destin Daniel Cretton",
-                        "https://image.tmdb.org/t/p/w500/iuFNMS8U5cb6xfzi51Dbkovj7vM.jpg",
-                        "https://image.tmdb.org/t/p/w500/iuFNMS8U5cb6xfzi51Dbkovj7vM.jpg", 8.4, 4709),
+                        "https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg",
+                        "https://image.tmdb.org/t/p/original/14QbnygCuTO0vl7CAFmPf1fgZfV.jpg", 8.4, 4709),
 
                 createMovie(27205L, "Inception",
                         "Cobb steals information from his targets by entering their dreams. He is offered a chance to have his criminal history erased as payment for the implantation of another person's idea into a target's subconscious.",

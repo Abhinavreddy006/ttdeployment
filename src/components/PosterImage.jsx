@@ -28,6 +28,15 @@ export const getPosterUrl = (path, size = 'w500') => {
   if (typeof path !== 'string' || !path.trim()) return '';
 
   const normalizedPath = path.trim();
+  if (normalizedPath.includes('iuFNMS8U5cb6xfzi51Dbkovj7vM')) {
+    return 'https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg';
+  }
+  if (normalizedPath.includes('9w019B9K12erA324')) {
+    return 'https://image.tmdb.org/t/p/w500/wTnV3PCVW5O92JMrFvvrRcV39RU.jpg';
+  }
+  if (normalizedPath.includes('8cdWjvZ211M13968')) {
+    return 'https://image.tmdb.org/t/p/w500/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg';
+  }
   if (/^https?:\/\//i.test(normalizedPath)) return normalizedPath;
   if (normalizedPath.startsWith('/')) {
     return `https://image.tmdb.org/t/p/${size}${normalizedPath}`;
@@ -36,7 +45,11 @@ export const getPosterUrl = (path, size = 'w500') => {
 };
 
 const CANONICAL_POSTERS = {
-  'spider-man: brand new day': 'https://image.tmdb.org/t/p/w500/iuFNMS8U5cb6xfzi51Dbkovj7vM.jpg',
+  'spider-man: brand new day': 'https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg',
+  'spiderman brand new day': 'https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg',
+  'spider-man': 'https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg',
+  'spiderman': 'https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg',
+  'spider-man: no way home': 'https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg',
   'insidious': 'https://image.tmdb.org/t/p/w500/tmlDFIUpGRKiuWm9Ixc6CYDk4y0.jpg',
   'interstellar': 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
   'oppenheimer': 'https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg',
@@ -70,6 +83,12 @@ const CANONICAL_POSTERS = {
 const getCanonicalPoster = (title) => {
   if (!title) return '';
   const key = String(title).toLowerCase().trim();
+  if (key.includes('across the spider-verse') || key.includes('across the spider verse')) {
+    return 'https://image.tmdb.org/t/p/w500/8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg';
+  }
+  if (key.includes('spider-man') || key.includes('spiderman')) {
+    return 'https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg';
+  }
   return CANONICAL_POSTERS[key] || '';
 };
 
@@ -97,7 +116,11 @@ const PosterImage = ({
     setHasError(false);
     setIsLoaded(false);
 
-    if (directUrl) {
+    if (canonicalUrl && (String(alt || '').toLowerCase().includes('spider-man: brand new day') || String(alt || '').toLowerCase().includes('spiderman brand new day'))) {
+      setImageUrl(canonicalUrl);
+    } else if (canonicalUrl && String(alt || '').toLowerCase().includes('across the spider-verse')) {
+      setImageUrl(canonicalUrl);
+    } else if (directUrl) {
       setImageUrl(directUrl);
     } else if (canonicalUrl) {
       setImageUrl(canonicalUrl);
