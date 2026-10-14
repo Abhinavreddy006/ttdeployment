@@ -3,11 +3,11 @@
   "rewrites": [
     {
       "source": "/api/:match*",
-      "destination": "https://cinerate-backend.onrender.com/api/:match*"
+      "destination": "https://cinerate-backend-i19p.onrender.com/api/:match*"
     },
     {
       "source": "/health",
-      "destination": "https://cinerate-backend.onrender.com/health"
+      "destination": "https://cinerate-backend-i19p.onrender.com/health"
     },
     {
       "source": "/(.*)",
